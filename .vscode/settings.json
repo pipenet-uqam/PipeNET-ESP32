@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "esp_spi_flash.h": "c",
+        "freertos.h": "c",
+        "freertosconfig.h": "c",
+        "sdkconfig.h": "c",
+        "type_traits": "c",
+        "cmath": "c",
+        "i2c.h": "c",
+        "ringbuf.h": "c"
+    },
+}
