@@ -50,3 +50,17 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# MacOS directory files
+.DS_Store
+
+# eclipse setting
+.settings
+
+# VS Code Settings
+.vscode/
+
+# ESP-IDF library 
+build
+sdkconfig
+sdkconfig.old
