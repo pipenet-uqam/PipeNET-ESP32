@@ -8,6 +8,9 @@
         "type_traits": "c",
         "cmath": "c",
         "i2c.h": "c",
-        "ringbuf.h": "c"
+        "ringbuf.h": "c",
+        "esp_system.h": "c",
+        "task.h": "c",
+        "portable.h": "c"
     },
 }

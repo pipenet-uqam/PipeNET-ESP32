@@ -17,7 +17,7 @@
 #include "driver/i2c.h"
 
 #define SDA_PIN GPIO_NUM_18
-#define SCL_PIN GPIO_NUM_19
+#define SCL_PIN GPIO_NUM_23
 
 #define MS5803 0x76
 
@@ -42,8 +42,8 @@ void i2c_master_init()
         .mode = I2C_MODE_MASTER,
         .sda_io_num = SDA_PIN,
         .scl_io_num = SCL_PIN,
-        .sda_pullup_en = GPIO_PULLUP_DISABLE,
-        .scl_pullup_en = GPIO_PULLUP_DISABLE,
+        .sda_pullup_en = GPIO_PULLUP_ENABLE,
+        .scl_pullup_en = GPIO_PULLUP_ENABLE,
         .master.clk_speed = 400000};
     i2c_param_config(I2C_NUM_0, &i2c_config);
     i2c_driver_install(I2C_NUM_0, I2C_MODE_MASTER, 0, 0, 0);
@@ -106,7 +106,7 @@ uint32_t cmd_adc(uint8_t cmd_conv)
 
     vTaskDelay(100 / portTICK_PERIOD_MS);
 
-    ESP_ERROR_CHECK(i2c_master_cmd_begin(I2C_NUM_0, cmd, 5000 / portTICK_PERIOD_MS));
+    i2c_master_cmd_begin(I2C_NUM_0, cmd, 5000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
 
     value = (byte1 << 16) | (byte2 << 8) | (byte3);
