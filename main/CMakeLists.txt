@@ -1,4 +1,4 @@
-set(COMPONENT_SRCS  "hello_world_main.c"
+set(COMPONENT_SRCS  "main.c"
                     "http_server.c"
                     "json.c"
                     "wifi_manager.c")
