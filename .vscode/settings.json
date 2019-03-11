@@ -11,6 +11,9 @@
         "ringbuf.h": "c",
         "esp_system.h": "c",
         "task.h": "c",
-        "portable.h": "c"
+        "portable.h": "c",
+        "http_server.h": "c",
+        "event_groups.h": "c",
+        "wifi_manager.h": "c"
     },
 }

@@ -13,8 +13,23 @@
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 
+#include <string.h>
+#include "driver/spi_master.h"
+#include "esp_wifi.h"
+#include "esp_event_loop.h"
+#include "nvs_flash.h"
+#include "esp_log.h"
+#include "freertos/event_groups.h"
+#include "mdns.h"
+#include "lwip/api.h"
+#include "lwip/err.h"
+#include "lwip/netdb.h"
+
 #include "driver/gpio.h"
 #include "driver/i2c.h"
+
+#include "http_server.h"
+#include "wifi_manager.h"
 
 #define SDA_PIN GPIO_NUM_18
 #define SCL_PIN GPIO_NUM_23
@@ -35,6 +50,19 @@
 #define CMD_ADC_2048 0x06 // ADC OSR=2048
 #define CMD_ADC_4096 0x08 // ADC OSR=4096
 #define CMD_PROM_RD 0xA0  // Prom read command
+
+
+/**
+ * @brief RTOS task that periodically prints the heap memory available.
+ * @note Pure debug information, should not be ever started on production code!
+ */
+void monitoring_task(void *pvParameter)
+{
+	for(;;){
+		printf("free heap: %d\n",esp_get_free_heap_size());
+		vTaskDelay(5000 / portTICK_PERIOD_MS);
+	}
+}
 
 void i2c_master_init()
 {
@@ -113,8 +141,7 @@ uint32_t cmd_adc(uint8_t cmd_conv)
     return value;
 }
 
-void app_main()
-{
+void sensorTask(void *parameter) {
     uint16_t C[8]; // calibration coefficients
     uint32_t D1;   // ADC value of the pressure conversion
     uint32_t D2;   // ADC value of the temperature conversion
@@ -124,10 +151,6 @@ void app_main()
     double dT;     // difference between actual and measured temperature
     double OFF;    // offset at actual temperature
     double SENS;   // sensitivity at actual temperature
-
-    printf("Hello world!\n");
-
-    i2c_master_init();
 
     for (size_t i = 0; i < 8; i++)
     {
@@ -163,4 +186,37 @@ void app_main()
 
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
+}
+
+void app_main()
+{
+    /* disable the default wifi logging */
+	esp_log_level_set("wifi", ESP_LOG_NONE);
+
+    /* initialize i2c */
+    i2c_master_init();
+
+	/* initialize flash memory */
+	nvs_flash_init();
+
+	/* start the HTTP Server task */
+	xTaskCreate(&http_server, "http_server", 2048, NULL, 5, NULL);
+
+	/* start the wifi manager task */
+	xTaskCreate(&wifi_manager, "wifi_manager", 4096, NULL, 4, NULL);
+
+	/* start the sensor task */
+    xTaskCreatePinnedToCore(
+            sensorTask,   /* Function to implement the task */
+            "sensorTask", /* Name of the task */
+            10000,      /* Stack size in words */
+            NULL,       /* Task input parameter */
+            6 | portPRIVILEGE_BIT, /* Priority of the task */
+            NULL,       /* Task handle. */
+            0); /* Core where the task should run */
+
+	/* your code should go here. In debug mode we create a simple task on core 2 that monitors free heap memory */
+#if WIFI_MANAGER_DEBUG
+	xTaskCreatePinnedToCore(&monitoring_task, "monitoring_task", 2048, NULL, 1, NULL, 1);
+#endif
 }
