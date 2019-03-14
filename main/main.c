@@ -141,6 +141,30 @@ uint32_t cmd_adc(uint8_t cmd_conv)
     return value;
 }
 
+void send_udp(double t, double p) 
+{
+            char payload[100];
+            snprintf(payload, 100, "%A:%A", t, p);
+
+            struct sockaddr_in destAddr;
+            destAddr.sin_addr.s_addr = inet_addr("10.10.10.255");
+            destAddr.sin_family = AF_INET;
+            destAddr.sin_port = htons(5566);
+
+            int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+            int err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&destAddr, sizeof(destAddr));
+            if (err < 0) {
+                printf("Error occured during sending: errno %d", errno);
+            } else {
+                printf("Message sent");
+            }
+
+            shutdown(sock, 0);
+            close(sock);   
+
+}
+
 void sensorTask(void *parameter) {
     uint16_t C[8]; // calibration coefficients
     uint32_t D1;   // ADC value of the pressure conversion
@@ -184,6 +208,8 @@ void sensorTask(void *parameter) {
         printf("TEMP     : %f\n", T);
         printf("PRESSURE : %f\n", P);
 
+        send_udp(T, P);
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 }
@@ -219,37 +245,4 @@ void app_main()
 #if WIFI_MANAGER_DEBUG
 	xTaskCreatePinnedToCore(&monitoring_task, "monitoring_task", 2048, NULL, 1, NULL, 1);
 #endif
-
-char rx_buffer[128];
-char addr_str[128];
-int addr_family;
-int ip_protocol;
-
-struct sockaddr_in destAddr;
-destAddr.sin_addr.s_addr = inet_addr("10.10.10.255");
-destAddr.sin_family = AF_INET;
-destAddr.sin_port = htons(5566);
-addr_family = AF_INET;
-ip_protocol = IPPROTO_UDP;
-
-static const char *TAG = "example";
-static const char *payload = "Message from ESP32 ";
-
-        while (1) {
-
-            int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
-
-            int err = sendto(sock, payload, strlen(payload), 0, (struct sockaddr *)&destAddr, sizeof(destAddr));
-            if (err < 0) {
-                ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
-            } else {
-                ESP_LOGI(TAG, "Message sent");
-            }
-
-            shutdown(sock, 0);
-            close(sock);    
-
-            vTaskDelay(1000 / portTICK_PERIOD_MS);    
-        }
-
 }
