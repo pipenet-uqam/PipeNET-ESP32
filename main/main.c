@@ -31,8 +31,8 @@
 #include "http_server.h"
 #include "wifi_manager.h"
 
-#define SDA_PIN GPIO_NUM_18
-#define SCL_PIN GPIO_NUM_23
+#define SDA_PIN GPIO_NUM_23
+#define SCL_PIN GPIO_NUM_18
 
 #define MS5803 0x76
 
@@ -50,6 +50,17 @@
 #define CMD_ADC_2048 0x06 // ADC OSR=2048
 #define CMD_ADC_4096 0x08 // ADC OSR=4096
 #define CMD_PROM_RD 0xA0  // Prom read command
+
+
+char* get_mac_str() {
+    uint8_t mac[6];
+    static char str[20];
+
+    esp_efuse_mac_get_default(mac);
+    sprintf(str, "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    return str;
+}
 
 
 /**
@@ -144,7 +155,7 @@ uint32_t cmd_adc(uint8_t cmd_conv)
 void send_udp(double t, double p) 
 {
             char payload[100];
-            snprintf(payload, 100, "%A:%A", t, p);
+            snprintf(payload, 100, "%s|%A|%A", get_mac_str(), t, p);
 
             struct sockaddr_in destAddr;
             destAddr.sin_addr.s_addr = inet_addr("10.10.10.255");
